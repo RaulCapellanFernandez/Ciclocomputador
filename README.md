@@ -2,7 +2,7 @@
 
 Raúl Capellán Fernández
 
-Project with arduino UNO.
+Project with arduino UNO.\n
 This project use differents sensors to create a cyclocomputer.
 GPS sensor -> Ublock 6m.
 SD Card -> For keeping all the data and routes.
