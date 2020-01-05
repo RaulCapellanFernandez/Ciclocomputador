@@ -91,7 +91,7 @@ void loop() {
           darNombreDoc();
           Serial.println(nombreDoc);
           headersXML();
-          delay(1000);
+          delay(200);
           contNombre ++;
         }
         val1= digitalRead(BOTON1); // lee el estado del Boton
@@ -106,7 +106,12 @@ void loop() {
         }
          if (state1==1 && contCloser == 0){
           closerXML();
-          contCloser ++;
+          //contCloser ++;
+          state = 0;
+          state1=0;
+          contNombre = 0;
+          return loop();
+          
         }
       }
     }
