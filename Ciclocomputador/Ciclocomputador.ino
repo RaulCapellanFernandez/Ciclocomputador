@@ -2,6 +2,8 @@
 #include <SoftwareSerial.h>
 #include <SD.h>
 #include <SPI.h>
+#include <SFE_BMP180.h>
+#include <Wire.h>
 
 //static const int RXPin = 18, TXPin = 19;  //Para el sensor GPS
 static const uint32_t GPSBaud = 57600;
@@ -27,12 +29,27 @@ bool value_D0;
 unsigned int cadencia[60];
 unsigned int contador= 0;
 
+//Para la altitud con el barometro
+SFE_BMP180 bmp180;
+double PresionNivelMar=1013.25; //presion sobre el nivel del mar en mbar
+
 void setup() {
+    
   //pinMode(BOTON,INPUT); // y BOTON como señal de entrada
   Serial.begin(57600);
   Serial.println("The GPS recived signal");
   Serial1.begin(9600);       
+
+  //Inicia el barometro
+  if (bmp180.begin())
+    Serial.println("BMP180 iniciado correctamenten");
+  else
+  {
+    Serial.println("Error al iniciar el BMP180");
+   while(1); // bucle infinito
+  }
   
+  //Para la tarjeta SD
   Serial.print("Conectando a SD...");     //Para tener preparada la SD para ejecutar
   if (!SD.begin(53)) {
     Serial.println("Conexion fallida");
@@ -42,7 +59,6 @@ void setup() {
   pinMode (IN_D0, INPUT);
   rellenaUnos();
   
- 
   headersXML();
  
 }
@@ -244,7 +260,7 @@ void trackpointXML(){
         myFile.print(xmlNodoNum("LatitudeDegrees", gps.location.lat()));
         myFile.print(xmlNodoNum("LongitudeDegrees", gps.location.lng()));
         myFile.print(xmlCerrar("Position"));
-        myFile.print(xmlNodoNum("AltitudeMeters", 0.00));
+        myFile.print(xmlNodoNum("AltitudeMeters", calcularAltitud()));
         
         if (tSeconds == 1) {
           latAnt = gps.location.lat();
@@ -297,4 +313,36 @@ int calcularCadencia(){
       final = final +2;
   }
   return final;
+}
+
+//Calcular la altitud con el barometro
+int calcularAltitud(){
+  char status;
+  double T,P,A;
+  
+  status = bmp180.startTemperature();//Inicio de lectura de temperatura
+  if (status != 0)
+  {   
+    delay(status); //Pausa para que finalice la lectura
+    status = bmp180.getTemperature(T); //Obtener la temperatura
+    if (status != 0)
+    {
+      status = bmp180.startPressure(3);//Inicio lectura de presión
+      if (status != 0)
+      {        
+        delay(status);//Pausa para que finalice la lectura        
+        status = bmp180.getPressure(P,T);//Obtenemos la presión
+        if (status != 0)
+        {                  
+          //-------Calculamos la altitud--------
+          A= bmp180.altitude(P,PresionNivelMar);
+          //Medir al nivel de calle para hacer calculos a nivel de calle son 815
+          A = A+129;
+          Serial.print("Altitud: ");
+          Serial.println(A);
+        }      
+      }      
+    }   
+  } 
+  return A;
 }

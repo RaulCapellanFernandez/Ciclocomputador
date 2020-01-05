@@ -2,7 +2,6 @@
 #include <Wire.h>
 
 SFE_BMP180 bmp180;
-
 double PresionNivelMar=1013.25; //presion sobre el nivel del mar en mbar
 
 void setup()
@@ -20,6 +19,10 @@ void setup()
 
 void loop()
 {
+  calcularAltitud();
+}
+
+void calcularAltitud(){
   char status;
   double T,P,A;
   
@@ -37,22 +40,14 @@ void loop()
         status = bmp180.getPressure(P,T);//Obtenemos la presión
         if (status != 0)
         {                  
-          Serial.print("Temperatura: ");
-          Serial.print(T);
-          Serial.print(" *C , ");
-          Serial.print("Presion: ");
-          Serial.print(P);
-          Serial.print(" mb , ");     
           //-------Calculamos la altitud--------
           A= bmp180.altitude(P,PresionNivelMar);
           //Medir al nivel de calle para hacer calculos a nivel de calle son 815
-         A = A+129;
+          A = A+129;
           Serial.print("Altitud: ");
-          Serial.print(A);
-          Serial.println(" m s.n.m.");    
+          Serial.println(A);
         }      
       }      
     }   
   } 
-  delay(1000);
 }
