@@ -33,6 +33,10 @@ unsigned int contador= 0;
 SFE_BMP180 bmp180;
 double PresionNivelMar=1013.25; //presion sobre el nivel del mar en mbar
 
+//Contador para el nombre y variable para su nombre
+int contNombre = 0;
+String nombreDoc;
+
 void setup() {
     
   //pinMode(BOTON,INPUT); // y BOTON como señal de entrada
@@ -59,8 +63,6 @@ void setup() {
   pinMode (IN_D0, INPUT);
   rellenaUnos();
   
-  headersXML();
- 
 }
 
 void loop() {
@@ -76,10 +78,16 @@ void loop() {
     while (Serial1.available() > 0) {          //Bucle para ver que hay conexion con el GPS
       gps.encode(Serial1.read());              //Lee los datos del GPS
       if (gps.location.isUpdated()) {     //Comprueba que los datos se hayan actualizado
+        
+        //Cuando pulsa el boton se crea un .tcx con los headers y con el nombre la fecha y la hora
+        if(contNombre == 0){
+          darNombreDoc();
+          Serial.println(nombreDoc);
+          headersXML();
+          contNombre ++;
+        }
         cadenciaPorSegundo();
         trackpointXML();
-       
-        Serial.println("Iteraccion");
       }
     }
   }
@@ -177,7 +185,7 @@ String xmlheader(){
 
 ///////////////////Headers TCX//////////////////
 void headersXML(){
-  myFile = SD.open("trackP.txt", FILE_WRITE);   //Abre el archivo donde va guardando la informacion
+  myFile = SD.open(nombreDoc, FILE_WRITE);   //Abre el archivo donde va guardando la informacion
   if (myFile) {
     Serial.println("Imprime headers");
     myFile.println(xmlComent("----------------------------------------------------"));
@@ -205,7 +213,7 @@ void headersXML(){
 
 /////////////////////////Headers del cierre lo que se repite vamos//////////////////////////////////////////
 void closerXML(){
-  myFile = SD.open("trackP.txt", FILE_WRITE);   //Abre el archivo donde va guardando la informacion
+  myFile = SD.open(nombreDoc, FILE_WRITE);   //Abre el archivo donde va guardando la informacion
   if (myFile) {
     myFile.println(xmlCerrar("Track"));
     myFile.println(xmlInicio("Extensions"));
@@ -251,7 +259,7 @@ void closerXML(){
 
 ////////////////////Trackpoint Data////////////////////////////////////////
 void trackpointXML(){
-  myFile = SD.open("trackP.txt", FILE_WRITE);   //Abre el archivo donde va guardando la informacion
+  myFile = SD.open(nombreDoc, FILE_WRITE);   //Abre el archivo donde va guardando la informacion
   if (myFile) {
     Serial.println("Imprime trackpoint");
         myFile.println(xmlInicio("Trackpoint"));
@@ -345,4 +353,20 @@ int calcularAltitud(){
     }   
   } 
   return A;
+}
+
+//Metodo para dar  nombre unico a cada track
+void darNombreDoc(){
+  //nombreDoc = gps.date.year();
+  //nombreDoc += "-";
+  nombreDoc = gps.date.month();
+  //nombreDoc += "-";
+  nombreDoc += gps.date.day();
+  //nombreDoc += "-";
+  nombreDoc += gps.time.hour()+1;
+  //nombreDoc += "-";
+  nombreDoc += gps.time.minute();
+  //nombreDoc += "-";
+  //nombreDoc += gps.time.second();
+  nombreDoc += ".tcx";
 }
