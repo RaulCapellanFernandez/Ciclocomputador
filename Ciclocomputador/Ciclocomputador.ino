@@ -23,6 +23,13 @@ int val = 0; //val se emplea para almacenar el estado del boton
 int state = 0; // 0 LED apagado, mientras que 1 encendido
 int old_val = 0; // almacena el antiguo valor de val
 
+//Para los botones
+const int BOTON1 = 3;
+int val1 = 0; //val se emplea para almacenar el estado del boton
+int state1 = 0; // 0 LED apagado, mientras que 1 encendido
+int old_val1 = 0; // almacena el antiguo valor de val
+int contCloser = 0;
+
 //Para el sensor de cadencia
 const int IN_D0 = 8; // digital input
 bool value_D0;
@@ -84,10 +91,23 @@ void loop() {
           darNombreDoc();
           Serial.println(nombreDoc);
           headersXML();
+          delay(1000);
           contNombre ++;
         }
-        cadenciaPorSegundo();
-        trackpointXML();
+        val1= digitalRead(BOTON1); // lee el estado del Boton
+        if ((val1 == HIGH) && (old_val1 == LOW)){
+          state1=1-state1;
+          delay(10);
+        }
+        old_val1 = val1; // valor del antiguo estado
+        if (state1==0){
+          cadenciaPorSegundo();
+          trackpointXML();
+        }
+         if (state1==1 && contCloser == 0){
+          closerXML();
+          contCloser ++;
+        }
       }
     }
   }
@@ -154,7 +174,7 @@ String formatoFecha() {
     fecha += "0";
     fecha += gps.time.second();
   }
-  fecha += ".00Z";
+  fecha += ".000Z";
   //Serial.println(fecha);
   return fecha;
 }
@@ -188,15 +208,15 @@ void headersXML(){
   myFile = SD.open(nombreDoc, FILE_WRITE);   //Abre el archivo donde va guardando la informacion
   if (myFile) {
     Serial.println("Imprime headers");
-    myFile.println(xmlComent("----------------------------------------------------"));
-    myFile.println(xmlComent("--   Hecho por Raul Capellan -> ciclocomputador   --"));
-    myFile.println(xmlComent("----------------------------------------------------"));
+    //myFile.println(xmlComent("----------------------------------------------------"));
+    //myFile.println(xmlComent("--   Hecho por Raul Capellan -> ciclocomputador   --"));
+    //myFile.println(xmlComent("----------------------------------------------------"));
     myFile.println(xmlheader());
     myFile.println(xmlInicio("TrainingCenterDatabase xmlns=\"http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2\""));
     myFile.println(xmlInicio("Activities"));
     myFile.println(xmlInicio("Activity Sport=\"Biking\""));
     myFile.println(xmlNodo("Id", formatoFecha()));
-    myFile.println(xmlInicio("Lap StartTime="+formatoFecha()));
+    myFile.println(xmlInicio("Lap StartTime= \""+formatoFecha()+"\""));
     myFile.println(xmlNodoNum("TotalTimeSeconds",0.00));
     myFile.println(xmlNodoNum("DistanceMeters",0.00));
     myFile.println(xmlNodoNum("MaximumSpeed",0.00));
@@ -213,6 +233,7 @@ void headersXML(){
 
 /////////////////////////Headers del cierre lo que se repite vamos//////////////////////////////////////////
 void closerXML(){
+  Serial.println("Closer escribiendo");
   myFile = SD.open(nombreDoc, FILE_WRITE);   //Abre el archivo donde va guardando la informacion
   if (myFile) {
     myFile.println(xmlCerrar("Track"));
@@ -275,7 +296,6 @@ void trackpointXML(){
           longAnt = gps.location.lng();
         }
           tDistancia += calcularDistancia(latAnt, gps.location.lat(), longAnt, gps.location.lng());
-          myFile.print(tDistancia);
           latAnt = gps.location.lat();
           longAnt = gps.location.lng();
           
