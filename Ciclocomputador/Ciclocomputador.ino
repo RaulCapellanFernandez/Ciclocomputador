@@ -3,11 +3,11 @@
 #include <SD.h>
 #include <SPI.h>
 
-static const int RXPin = 4, TXPin = 3;  //Para el sensor GPS
-static const uint32_t GPSBaud = 9600;
+//static const int RXPin = 18, TXPin = 19;  //Para el sensor GPS
+static const uint32_t GPSBaud = 57600;
 
 TinyGPSPlus gps;                        //Para el GPS
-SoftwareSerial ss(RXPin, TXPin);  
+//SoftwareSerial ss(RXPin, TXPin);
 
 File myFile;                            //Para la tarjeta SD
 double tSeconds = 0;
@@ -15,25 +15,26 @@ double latAnt;
 double longAnt;
 double tDistancia = 0;
 
-              //Para los botones
+//Para los botones
 const int BOTON = 2;
 int val = 0; //val se emplea para almacenar el estado del boton
 int state = 0; // 0 LED apagado, mientras que 1 encendido
 int old_val = 0; // almacena el antiguo valor de val
 
 void setup() {
-  pinMode(BOTON,INPUT); // y BOTON como señal de entrada
+  //pinMode(BOTON,INPUT); // y BOTON como señal de entrada
+  Serial.begin(57600);
+  Serial.println("The GPS recived signal");
+  Serial1.begin(9600);       
   
-  Serial.begin(9600);
-  ss.begin(GPSBaud);
-    
   Serial.print("Conectando a SD...");     //Para tener preparada la SD para ejecutar
-  if (!SD.begin(7)) {
+  if (!SD.begin(53)) {
     Serial.println("Conexion fallida");
     while (1);
   }
   Serial.println("Conexion correcta");
   headersXML();
+ 
 }
 
 void loop() {
@@ -44,12 +45,13 @@ void loop() {
   }
   old_val = val; // valor del antiguo estado
   if (state==1){
-    Serial.println("MISUYY");
-    delay(10000);
-    while (ss.available() > 0) {          //Bucle para ver que hay conexion con el GPS
-      gps.encode(ss.read());              //Lee los datos del GPS
+    //Serial.println("MISUYY");
+    //delay(10000);
+    while (Serial1.available() > 0) {          //Bucle para ver que hay conexion con el GPS
+      gps.encode(Serial1.read());              //Lee los datos del GPS
       if (gps.location.isUpdated()) {     //Comprueba que los datos se hayan actualizado
         trackpointXML();
+       
         Serial.println("Iteraccion");
       }
     }
