@@ -21,6 +21,12 @@ int val = 0; //val se emplea para almacenar el estado del boton
 int state = 0; // 0 LED apagado, mientras que 1 encendido
 int old_val = 0; // almacena el antiguo valor de val
 
+//Para el sensor de cadencia
+const int IN_D0 = 8; // digital input
+bool value_D0;
+unsigned int cadencia[60];
+unsigned int contador= 0;
+
 void setup() {
   //pinMode(BOTON,INPUT); // y BOTON como señal de entrada
   Serial.begin(57600);
@@ -33,6 +39,10 @@ void setup() {
     while (1);
   }
   Serial.println("Conexion correcta");
+  pinMode (IN_D0, INPUT);
+  rellenaUnos();
+  
+ 
   headersXML();
  
 }
@@ -50,6 +60,7 @@ void loop() {
     while (Serial1.available() > 0) {          //Bucle para ver que hay conexion con el GPS
       gps.encode(Serial1.read());              //Lee los datos del GPS
       if (gps.location.isUpdated()) {     //Comprueba que los datos se hayan actualizado
+        cadenciaPorSegundo();
         trackpointXML();
        
         Serial.println("Iteraccion");
@@ -234,6 +245,7 @@ void trackpointXML(){
         myFile.print(xmlNodoNum("LongitudeDegrees", gps.location.lng()));
         myFile.print(xmlCerrar("Position"));
         myFile.print(xmlNodoNum("AltitudeMeters", 0.00));
+        
         if (tSeconds == 1) {
           latAnt = gps.location.lat();
           longAnt = gps.location.lng();
@@ -244,11 +256,45 @@ void trackpointXML(){
           longAnt = gps.location.lng();
           
           myFile.print(xmlNodoNum("DistanceMeters", tDistancia));
-          myFile.print(xmlNodoNum("Cadence", 0.00));
+          myFile.print(xmlNodoNum("Cadence", calcularCadencia()));
           myFile.println(xmlCerrar("Trackpoint"));
     
     myFile.close();
   } else
     Serial.println("error opening trackP.txt");
     myFile.close();
+}
+//Rellena el vector para que este como vacio a a la hora de detectar la cadencia
+void rellenaUnos(){
+  int i = 0;
+  for(i = 0; i < 60; i++)
+    cadencia[i] = 1;
+}
+
+void cadenciaPorSegundo(){
+  value_D0 = digitalRead(IN_D0);// reads the digital input from the IR distance sensor
+  Serial.println(value_D0);
+  
+  if(contador == 59)//Resetea el contador para volver al principio del vector
+    contador = 0;
+    
+  if(value_D0 == 0)
+    cadencia[contador] = 0;
+  else
+    cadencia[contador] = 1;
+    
+  contador++;//Avanza el tiempo
+  Serial.print("Cadencia -> ");
+  Serial.println(calcularCadencia());
+}
+
+//Calcula la cadencia
+int calcularCadencia(){
+  int i;
+  int final= 0;
+  for(i=0; i < 60; i++){
+    if(cadencia[i] == 0)
+      final = final +2;
+  }
+  return final;
 }
