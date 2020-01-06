@@ -16,6 +16,7 @@ double tSeconds = 0;
 double latAnt;
 double longAnt;
 double tDistancia = 0;
+int altAnt = 0;
 
 //Para los botones
 const int BOTON = 2;
@@ -43,6 +44,11 @@ double PresionNivelMar=1013.25; //presion sobre el nivel del mar en mbar
 //Contador para el nombre y variable para su nombre
 int contNombre = 0;
 String nombreDoc;
+
+//Para calcular el porcentaje de pendiente
+double partialDist = 0;
+int partialAlt = 0;
+int pendiente = 0;
 
 void setup() {
     
@@ -102,6 +108,8 @@ void loop() {
         old_val1 = val1; // valor del antiguo estado
         if (state1==0){
           tSeconds++;
+          Serial.print(porcentajePendiente());
+          Serial.println("%");
           cadenciaPorSegundo();
           trackpointXML();
         }
@@ -302,9 +310,12 @@ void trackpointXML(){
           longAnt = gps.location.lng();
         }else{
           tDistancia += calcularDistancia(latAnt, gps.location.lat(), longAnt, gps.location.lng());
+          partialDist += calcularDistancia(latAnt, gps.location.lat(), longAnt, gps.location.lng());
+          partialAlt = partialAlt + (calcularAltitud()-altAnt);
         }
           latAnt = gps.location.lat();
           longAnt = gps.location.lng();
+          altAnt = calcularAltitud();
           
           myFile.print(xmlNodoNum("DistanceMeters", tDistancia));
           myFile.print(xmlNodoNum("Cadence", calcularCadencia()));
@@ -324,7 +335,7 @@ void rellenaUnos(){
 
 void cadenciaPorSegundo(){
   value_D0 = digitalRead(IN_D0);// reads the digital input from the IR distance sensor
-  Serial.println(value_D0);
+  //Serial.println(value_D0);
   
   if(contador == 59)//Resetea el contador para volver al principio del vector
     contador = 0;
@@ -335,8 +346,8 @@ void cadenciaPorSegundo(){
     cadencia[contador] = 1;
     
   contador++;//Avanza el tiempo
-  Serial.print("Cadencia -> ");
-  Serial.println(calcularCadencia());
+  //Serial.print("Cadencia -> ");
+  //Serial.println(calcularCadencia());
 }
 
 //Calcula la cadencia
@@ -373,8 +384,8 @@ int calcularAltitud(){
           A= bmp180.altitude(P,PresionNivelMar);
           //Medir al nivel de calle para hacer calculos a nivel de calle son 815
           A = A+129;
-          Serial.print("Altitud: ");
-          Serial.println(A);
+          //Serial.print("Altitud: ");
+          //Serial.println(A);
         }      
       }      
     }   
@@ -396,4 +407,15 @@ void darNombreDoc(){
   //nombreDoc += "-";
   //nombreDoc += gps.time.second();
   nombreDoc += ".tcx";
+}
+
+//Calcular el porcentaje de pendiente cada 50m
+int porcentajePendiente(){
+ 
+  if(partialDist >= 50){
+    pendiente = partialAlt * 100 / partialDist;
+    partialDist = 0;
+    partialAlt = 0;
+  }
+  return pendiente;
 }
