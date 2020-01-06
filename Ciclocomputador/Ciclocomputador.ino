@@ -101,6 +101,7 @@ void loop() {
         }
         old_val1 = val1; // valor del antiguo estado
         if (state1==0){
+          tSeconds++;
           cadenciaPorSegundo();
           trackpointXML();
         }
@@ -299,8 +300,9 @@ void trackpointXML(){
         if (tSeconds == 1) {
           latAnt = gps.location.lat();
           longAnt = gps.location.lng();
-        }
+        }else{
           tDistancia += calcularDistancia(latAnt, gps.location.lat(), longAnt, gps.location.lng());
+        }
           latAnt = gps.location.lat();
           longAnt = gps.location.lng();
           
