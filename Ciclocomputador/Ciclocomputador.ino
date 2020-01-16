@@ -86,8 +86,7 @@ void loop() {
   }
   old_val = val; // valor del antiguo estado
   if (state==1){
-    //Serial.println("MISUYY");
-    //delay(10000);
+    
     while (Serial1.available() > 0) {          //Bucle para ver que hay conexion con el GPS
       gps.encode(Serial1.read());              //Lee los datos del GPS
       if (gps.location.isUpdated()) {     //Comprueba que los datos se hayan actualizado
@@ -334,7 +333,7 @@ void rellenaUnos(){
 }
 
 void cadenciaPorSegundo(){
-  value_D0 = digitalRead(IN_D0);// reads the digital input from the IR distance sensor
+  value_D0 = digitalRead(IN_D0);// lee el valor del sensor
   //Serial.println(value_D0);
   
   if(contador == 59)//Resetea el contador para volver al principio del vector
