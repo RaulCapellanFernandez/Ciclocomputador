@@ -4,6 +4,12 @@
 #include <SPI.h>
 #include <SFE_BMP180.h>
 #include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_PCD8544.h>
+
+//Pantalla
+Adafruit_PCD8544 display = Adafruit_PCD8544(7, 6, 5, 4, 3);
+int opcion = 0;
 
 //static const int RXPin = 18, TXPin = 19;  //Para el sensor GPS
 static const uint32_t GPSBaud = 57600;
@@ -12,7 +18,7 @@ TinyGPSPlus gps;                        //Para el GPS
 //SoftwareSerial ss(RXPin, TXPin);
 
 File myFile;                            //Para la tarjeta SD
-double tSeconds = 0;
+int tSeconds = 0;
 double latAnt;
 double longAnt;
 double tDistancia = 0;
@@ -25,7 +31,7 @@ int state = 0; // 0 LED apagado, mientras que 1 encendido
 int old_val = 0; // almacena el antiguo valor de val
 
 //Para los botones
-const int BOTON1 = 3;
+const int BOTON1 = 9;
 int val1 = 0; //val se emplea para almacenar el estado del boton
 int state1 = 0; // 0 LED apagado, mientras que 1 encendido
 int old_val1 = 0; // almacena el antiguo valor de val
@@ -37,10 +43,11 @@ bool value_D0;
 unsigned int cadencia[60];
 unsigned int contador= 0;
 
+/*
 //Para la altitud con el barometro
 SFE_BMP180 bmp180;
 double PresionNivelMar=1013.25; //presion sobre el nivel del mar en mbar
-
+*/
 //Contador para el nombre y variable para su nombre
 int contNombre = 0;
 String nombreDoc;
@@ -57,6 +64,7 @@ void setup() {
   Serial.println("The GPS recived signal");
   Serial1.begin(9600);       
 
+/*
   //Inicia el barometro
   if (bmp180.begin())
     Serial.println("BMP180 iniciado correctamenten");
@@ -64,7 +72,15 @@ void setup() {
   {
     Serial.println("Error al iniciar el BMP180");
    while(1); // bucle infinito
-  }
+  }*/
+
+  //Para la pantalla
+  display.begin();
+  display.clearDisplay();
+  display.println("");
+  display.setTextSize(3);
+  display.println("INIT");
+  display.display();
   
   //Para la tarjeta SD
   Serial.print("Conectando a SD...");     //Para tener preparada la SD para ejecutar
@@ -107,6 +123,12 @@ void loop() {
         old_val1 = val1; // valor del antiguo estado
         if (state1==0){
           tSeconds++;
+          if(tSeconds % 8 == 0){
+            opcion ++;
+            imprimePantalla(opcion);
+            if(opcion == 5)
+              opcion = 0;
+          }
           Serial.print(porcentajePendiente());
           Serial.println("%");
           cadenciaPorSegundo();
@@ -118,6 +140,13 @@ void loop() {
           state = 0;
           state1=0;
           contNombre = 0;
+          
+          display.begin();
+          display.clearDisplay();
+          display.println("");
+          display.setTextSize(3);
+          display.println("INIT");
+          display.display();
           return loop();
           
         }
@@ -302,7 +331,8 @@ void trackpointXML(){
         myFile.print(xmlNodoNum("LatitudeDegrees", gps.location.lat()));
         myFile.print(xmlNodoNum("LongitudeDegrees", gps.location.lng()));
         myFile.print(xmlCerrar("Position"));
-        myFile.print(xmlNodoNum("AltitudeMeters", calcularAltitud()));
+        //myFile.print(xmlNodoNum("AltitudeMeters", calcularAltitud()));
+        myFile.print(xmlNodoNum("AltitudeMeters", 0));
         
         if (tSeconds == 1) {
           latAnt = gps.location.lat();
@@ -310,11 +340,11 @@ void trackpointXML(){
         }else{
           tDistancia += calcularDistancia(latAnt, gps.location.lat(), longAnt, gps.location.lng());
           partialDist += calcularDistancia(latAnt, gps.location.lat(), longAnt, gps.location.lng());
-          partialAlt = partialAlt + (calcularAltitud()-altAnt);
+          //partialAlt = partialAlt + (calcularAltitud()-altAnt);
         }
           latAnt = gps.location.lat();
           longAnt = gps.location.lng();
-          altAnt = calcularAltitud();
+          //altAnt = calcularAltitud();
           
           myFile.print(xmlNodoNum("DistanceMeters", tDistancia));
           myFile.print(xmlNodoNum("Cadence", calcularCadencia()));
@@ -360,6 +390,7 @@ int calcularCadencia(){
   return final;
 }
 
+/*
 //Calcular la altitud con el barometro
 int calcularAltitud(){
   char status;
@@ -390,7 +421,7 @@ int calcularAltitud(){
     }   
   } 
   return A;
-}
+}*/
 
 //Metodo para dar  nombre unico a cada track
 void darNombreDoc(){
@@ -417,4 +448,63 @@ int porcentajePendiente(){
     partialAlt = 0;
   }
   return pendiente;
+}
+
+
+void imprimePantalla(int opcion1){
+
+  display.begin();
+  display.clearDisplay(); 
+  
+  switch(opcion1){
+    case 1: 
+     display.setTextSize(2);
+     display.println(" Speed");
+     display.setTextSize(3);
+     display.println(gps.speed.kmph());
+     display.setTextSize(1);
+     display.println("    Km/h");
+     display.display();
+    break;
+    
+    case 2:
+     display.setTextSize(2);
+     display.println(" Distan");
+     display.setTextSize(3);
+     display.println( tDistancia);
+     display.setTextSize(1);
+     display.println("   meters");
+     display.display();
+    break;
+    
+    case 3: 
+     display.setTextSize(2);
+     display.println(" Caden");
+     display.setTextSize(3);
+     display.println(  calcularCadencia());
+     display.setTextSize(1);
+     display.println("  cad/min");
+     display.display();
+    break;
+    
+    case 4:
+     display.setTextSize(2);
+     display.println(" Alti");
+     display.setTextSize(3);
+     display.println(" 830");
+     display.setTextSize(1);
+     display.println("   meters");
+     display.display();
+    break;
+    
+    case 5: 
+     display.setTextSize(2);
+     display.println(" Pend");
+     display.setTextSize(3);
+     display.println("  23");
+     display.setTextSize(1);
+     display.println("    %");
+     display.display();
+    break;
+  }
 }
