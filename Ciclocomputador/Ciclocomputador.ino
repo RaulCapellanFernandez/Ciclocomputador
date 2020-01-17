@@ -471,7 +471,7 @@ void imprimePantalla(int opcion1){
      display.setTextSize(2);
      display.println(" Distan");
      display.setTextSize(3);
-     display.println( tDistancia);
+     display.println( ((tDistancia/1000)));
      display.setTextSize(1);
      display.println("   meters");
      display.display();
